@@ -339,6 +339,23 @@ public class PGraphicsCanvas2D extends PGraphics {
   }
 
 
+  // Compare logical size: density defaults to displayDensity(), but loaded images stay at density 1 and are scaled on draw.
+  @Override
+  public void background(PImage image) {
+    if (image instanceof Canvas2DImage) {
+      ((Canvas2DImage) image).syncSize();
+    }
+    if (image.width != width || image.height != height) {
+      throw new RuntimeException(ERROR_BACKGROUND_IMAGE_SIZE);
+    }
+    if (image.format != RGB && image.format != ARGB) {
+      throw new RuntimeException(ERROR_BACKGROUND_IMAGE_FORMAT);
+    }
+    backgroundColor = 0;
+    backgroundImpl(image);
+  }
+
+
   @Override
   protected void backgroundImpl(PImage image) {
     imageImpl(image, 0, 0, width, height, 0, 0, image.width, image.height);

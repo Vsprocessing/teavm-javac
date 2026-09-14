@@ -23,6 +23,7 @@
 package processing.platform.teavm;
 
 import java.io.File;
+import java.util.ArrayList;
 
 import org.teavm.jso.JSObject;
 
@@ -31,6 +32,7 @@ import processing.core.PConstants;
 import processing.core.PGraphics;
 import processing.core.PImage;
 import processing.core.PSurfaceNone;
+import processing.event.Event;
 import processing.event.KeyEvent;
 import processing.event.MouseEvent;
 
@@ -40,6 +42,8 @@ public class Canvas2DSurface extends PSurfaceNone {
   private Canvas2DBridge.KeyInputCallback keyInputCallback;
   private double lastFrameMillis = -1;
   private boolean running;
+  // Filled from JS input callbacks, which run outside a TeaVM fiber and must not reach code that can suspend.
+  private ArrayList<Event> pendingEvents = new ArrayList<>();
 
 
   public Canvas2DSurface(PGraphics graphics) {
@@ -242,6 +246,8 @@ public class Canvas2DSurface extends PSurfaceNone {
       return false;
     }
 
+    flushPendingEvents();
+
     if (!paused && shouldDraw(timeMillis)) {
       sketch.handleDraw();
       lastFrameMillis = timeMillis;
@@ -252,13 +258,25 @@ public class Canvas2DSurface extends PSurfaceNone {
 
   private void postMouseEvent(JSObject nativeEvent, double millis, int action, int modifiers,
                               int x, int y, int button, int count) {
-    sketch.postEvent(new MouseEvent(nativeEvent, (long) millis, action, modifiers, x, y, button, count));
+    pendingEvents.add(new MouseEvent(nativeEvent, (long) millis, action, modifiers, x, y, button, count));
   }
 
 
   private void postKeyEvent(JSObject nativeEvent, double millis, int action, int modifiers,
                             int key, int keyCode, boolean repeat) {
-    sketch.postEvent(new KeyEvent(nativeEvent, (long) millis, action, modifiers, (char) key, keyCode, repeat));
+    pendingEvents.add(new KeyEvent(nativeEvent, (long) millis, action, modifiers, (char) key, keyCode, repeat));
+  }
+
+
+  private void flushPendingEvents() {
+    if (pendingEvents.isEmpty()) {
+      return;
+    }
+    ArrayList<Event> events = pendingEvents;
+    pendingEvents = new ArrayList<>();
+    for (Event event : events) {
+      sketch.postEvent(event);
+    }
   }
 
 
