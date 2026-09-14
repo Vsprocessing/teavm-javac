@@ -217,6 +217,11 @@ final class Canvas2DBridge {
   static native void noLoop(JSObject host);
 
 
+  @JSBody(params = { "host", "density" }, script =
+    "if (host && typeof host.pixelDensity === 'function') host.pixelDensity(density);")
+  static native void pixelDensity(JSObject host, int density);
+
+
   @JSBody(params = { "host", "width", "height" }, script =
     "if (!host || typeof host.createCanvas !== 'function') return null;" +
     "return host.createCanvas(width, height);")

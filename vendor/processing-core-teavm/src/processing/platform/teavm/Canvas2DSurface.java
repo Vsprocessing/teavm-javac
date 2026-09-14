@@ -69,6 +69,7 @@ public class Canvas2DSurface extends PSurfaceNone {
     this.sketch = sketch;
     sketch.hint(PConstants.ENABLE_KEY_REPEAT);
     Canvas2DBridge.noLoop(host());
+    Canvas2DBridge.pixelDensity(host(), sketch.sketchPixelDensity());
     renderer = Canvas2DBridge.createCanvas(host(), sketch.sketchWidth(), sketch.sketchHeight());
     graphics.setSize(sketch.sketchWidth(), sketch.sketchHeight());
     mouseInputCallback = this::postMouseEvent;
@@ -91,6 +92,7 @@ public class Canvas2DSurface extends PSurfaceNone {
 
   @Override
   public void setSize(int width, int height) {
+    Canvas2DBridge.pixelDensity(host(), sketch.sketchPixelDensity());
     Canvas2DBridge.resizeCanvas(host(), width, height);
     super.setSize(width, height);
   }
